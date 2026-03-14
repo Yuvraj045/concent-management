@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= banner.name %> — Consent Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; min-height: 100vh; }
+    nav { background: #4f46e5; color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    nav a { color: #fff; text-decoration: none; font-size: 0.875rem; }
+    nav a:hover { text-decoration: underline; }
+    .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.15rem; margin-bottom: 1rem; }
+    p { color: #555; font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .meta { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .badge { display: inline-block; background: #eef2ff; color: #4f46e5; border-radius: 4px; padding: 0.2rem 0.6rem; font-size: 0.75rem; }
+    .public-url { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 0.5rem 0.75rem; font-family: monospace; font-size: 0.875rem; margin-top: 0.75rem; word-break: break-all; }
+    .actions { margin-top: 1rem; display: flex; gap: 0.5rem; }
+    .btn { padding: 0.5rem 1rem; background: #4f46e5; color: #fff; border: none; border-radius: 4px; font-size: 0.875rem; cursor: pointer; text-decoration: none; display: inline-block; }
+    .btn:hover { background: #4338ca; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-outline { background: transparent; color: #4f46e5; border: 1px solid #4f46e5; }
+    .btn-outline:hover { background: #eef2ff; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.625rem 0.75rem; font-size: 0.875rem; border-bottom: 1px solid #f0f0f0; }
+    th { background: #f8fafc; font-weight: 600; color: #444; }
+    .status-accepted { color: #16a34a; font-weight: 500; }
+    .status-rejected { color: #dc2626; font-weight: 500; }
+    .status-pending { color: #d97706; font-weight: 500; }
+    .empty { color: #888; text-align: center; padding: 2rem 0; }
+  </style>
+</head>
+<body>
+  <nav>
+    <strong>Consent Manager</strong>
+    <div style="display:flex;gap:1rem;">
+      <a href="/dashboard">Dashboard</a>
+      <span style="font-size:0.875rem;opacity:0.85"><%= user.email %></span>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="card">
+      <h1><%= banner.name %></h1>
+      <% if (banner.description) { %><p><%= banner.description %></p><% } %>
+      <div class="meta">
+        <% if (banner.subscriptionTypes && banner.subscriptionTypes.length > 0) { %>
+          <% banner.subscriptionTypes.forEach(type => { %>
+            <span class="badge"><%= type %></span>
+          <% }) %>
+        <% } %>
+      </div>
+      <p style="margin-top:0.75rem;font-size:0.8rem;color:#888;">Public URL:</p>
+      <div class="public-url"><%= baseUrl %>/b/<%= banner.slug %></div>
+      <div class="actions">
+        <a href="<%= baseUrl %>/b/<%= banner.slug %>" target="_blank" class="btn btn-outline">View Public Page</a>
+        <form method="POST" action="/banners/<%= banner._id %>/delete" onsubmit="return confirm('Delete this banner and all consent records?')">
+          <button type="submit" class="btn btn-danger">Delete Banner</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Consent Records (<%= consents.length %>)</h2>
+      <% if (consents.length === 0) { %>
+        <p class="empty">No consent records yet. Share the public URL to start collecting consent.</p>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Last Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% consents.forEach(c => { %>
+              <tr>
+                <td><%= c.email %></td>
+                <td><span class="status-<%= c.status %>"><%= c.status %></span></td>
+                <td><%= c.updatedAt.toLocaleString() %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

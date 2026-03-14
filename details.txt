@@ -1,0 +1,15 @@
+Consent Management System Basic
+Tech: Nodejs, Express, MongoDB, SendGrid, JWT, EJS a
+Users:
+  - User registeration, verify using email and passowrd and use jwt token email for verification using sengrid
+  - page to use login and reset-password
+Consent Banner: User can create consent banner and pushlish on an url with our app.
+tou create banner we need:
+- Banner name
+- Banner description
+- Communication subscriptions type
+On publish, banner will be avaibale by an url on same app.
+- for consent managament on open banner it will take email as input 
+- we send email with jwt token url and user can submit consent on that url for the banner.
+on Consent banner page we also have to list consent info like, user email, timestamp and reject and accespted consent.
+On submit consent we update consent document for same user or create new per banner.
