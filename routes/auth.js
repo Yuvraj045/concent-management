@@ -2,10 +2,8 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const sgMail = require("@sendgrid/mail");
+const { sendEmail } = require("../services/email");
 const User = require("../models/User");
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // GET /register
 router.get("/register", (req, res) => {
@@ -14,9 +12,14 @@ router.get("/register", (req, res) => {
 
 // POST /register
 router.post("/register", async (req, res) => {
-    const { email, password } = req.body;
-    console.log(process.env.SENDGRID_API_KEY);
+    const { email, password, confirmPassword } = req.body;
     try {
+        if (password !== confirmPassword)
+            return res.render("register", {
+                error: "Passwords do not match.",
+                success: null,
+            });
+
         const existing = await User.findOne({ email });
         if (existing)
             return res.render("register", {
@@ -31,18 +34,25 @@ router.post("/register", async (req, res) => {
             expiresIn: "1h",
         });
         const link = `${process.env.BASE_URL}/verify-email/${token}`;
-        console.log(process.env.SENDGRID_API_KEY);
-        await sgMail.send({
-            to: email,
-            from: process.env.FROM_EMAIL,
-            subject: "Verify your email",
-            html: `<p>Click <a href="${link}">here</a> to verify your email. Link expires in 1 hour.</p>`,
-        });
+
+        try {
+            await sendEmail({
+                to: email,
+                subject: "Verify your email",
+                html: `<p>Click <a href="${link}">here</a> to verify your email. Link expires in 1 hour.</p>`,
+            });
+        } catch (emailErr) {
+            console.error("Verification email failed, rolling back user creation:", emailErr);
+            await User.findByIdAndDelete(user._id);
+            return res.render("register", {
+                error: "Failed to send verification email. Please try again.",
+                success: null,
+            });
+        }
 
         res.render("register", {
             error: null,
-            success:
-                "Registration successful! Check your email to verify your account.",
+            success: "Registration successful! Check your email to verify your account.",
         });
     } catch (err) {
         console.error(err);
@@ -63,6 +73,7 @@ router.get("/verify-email/:token", async (req, res) => {
             success: "Email verified! You can now log in.",
         });
     } catch (err) {
+        console.error("Email verification error:", err.message);
         res.render("login", {
             error: "Verification link is invalid or expired.",
             success: null,
@@ -154,9 +165,8 @@ router.post("/reset-password", async (req, res) => {
         await user.save();
 
         const link = `${process.env.BASE_URL}/reset-password/confirm/${token}`;
-        await sgMail.send({
+        await sendEmail({
             to: email,
-            from: process.env.FROM_EMAIL,
             subject: "Reset your password",
             html: `<p>Click <a href="${link}">here</a> to reset your password. Link expires in 1 hour.</p>`,
         });

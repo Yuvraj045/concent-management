@@ -10,13 +10,11 @@
     nav { background: #4f46e5; color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
     nav a { color: #fff; text-decoration: none; font-size: 0.875rem; }
     nav a:hover { text-decoration: underline; }
-    .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
     .card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
     h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
     h2 { font-size: 1.15rem; margin-bottom: 1rem; }
     p { color: #555; font-size: 0.9rem; margin-bottom: 0.5rem; }
-    .meta { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; }
-    .badge { display: inline-block; background: #eef2ff; color: #4f46e5; border-radius: 4px; padding: 0.2rem 0.6rem; font-size: 0.75rem; }
     .public-url { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 0.5rem 0.75rem; font-family: monospace; font-size: 0.875rem; margin-top: 0.75rem; word-break: break-all; }
     .actions { margin-top: 1rem; display: flex; gap: 0.5rem; }
     .btn { padding: 0.5rem 1rem; background: #4f46e5; color: #fff; border: none; border-radius: 4px; font-size: 0.875rem; cursor: pointer; text-decoration: none; display: inline-block; }
@@ -28,10 +26,12 @@
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 0.625rem 0.75rem; font-size: 0.875rem; border-bottom: 1px solid #f0f0f0; }
     th { background: #f8fafc; font-weight: 600; color: #444; }
-    .status-accepted { color: #16a34a; font-weight: 500; }
-    .status-rejected { color: #dc2626; font-weight: 500; }
+    .enabled { color: #16a34a; font-weight: 500; }
+    .disabled { color: #dc2626; font-weight: 500; }
+    .status-submitted { color: #4f46e5; font-weight: 500; }
     .status-pending { color: #d97706; font-weight: 500; }
-    .empty { color: #888; text-align: center; padding: 2rem 0; }
+    .empty { color: #888; text-align: center; padding: 2rem 0; font-size: 0.9rem; }
+    .section-label { font-size: 0.75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
   </style>
 </head>
 <body>
@@ -47,21 +47,41 @@
     <div class="card">
       <h1><%= banner.name %></h1>
       <% if (banner.description) { %><p><%= banner.description %></p><% } %>
-      <div class="meta">
-        <% if (banner.subscriptionTypes && banner.subscriptionTypes.length > 0) { %>
-          <% banner.subscriptionTypes.forEach(type => { %>
-            <span class="badge"><%= type %></span>
-          <% }) %>
-        <% } %>
-      </div>
+
       <p style="margin-top:0.75rem;font-size:0.8rem;color:#888;">Public URL:</p>
       <div class="public-url"><%= baseUrl %>/b/<%= banner.slug %></div>
       <div class="actions">
         <a href="<%= baseUrl %>/b/<%= banner.slug %>" target="_blank" class="btn btn-outline">View Public Page</a>
-        <form method="POST" action="/banners/<%= banner._id %>/delete" onsubmit="return confirm('Delete this banner and all consent records?')">
-          <button type="submit" class="btn btn-danger">Delete Banner</button>
+        <form method="POST" action="/banners/<%= banner._id %>/delete" onsubmit="return confirm('Delete this preference center and all consent records?')">
+          <button type="submit" class="btn btn-danger">Delete Preference Center</button>
         </form>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>Subscription Types</h2>
+      <% if (banner.subscriptionTypes && banner.subscriptionTypes.length > 0) { %>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Subscription Name</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% banner.subscriptionTypes.forEach((type, i) => { %>
+              <tr>
+                <td><%= i + 1 %></td>
+                <td><%= type %></td>
+                <td class="enabled">Active</td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } else { %>
+        <p class="empty">No subscription types defined.</p>
+      <% } %>
     </div>
 
     <div class="card">
@@ -74,6 +94,9 @@
             <tr>
               <th>Email</th>
               <th>Status</th>
+              <% if (banner.subscriptionTypes && banner.subscriptionTypes.length > 0) { %>
+                <% banner.subscriptionTypes.forEach(type => { %><th><%= type %></th><% }) %>
+              <% } %>
               <th>Last Updated</th>
             </tr>
           </thead>
@@ -82,6 +105,23 @@
               <tr>
                 <td><%= c.email %></td>
                 <td><span class="status-<%= c.status %>"><%= c.status %></span></td>
+                <% if (banner.subscriptionTypes && banner.subscriptionTypes.length > 0) { %>
+                  <% banner.subscriptionTypes.forEach(type => { %>
+                    <%
+                      const sub = c.subscriptions && c.subscriptions.find(s => s.name === type);
+                      const isEnabled = sub ? sub.enabled : null;
+                    %>
+                    <td>
+                      <% if (isEnabled === null) { %>
+                        <span style="color:#aaa">—</span>
+                      <% } else if (isEnabled) { %>
+                        <span class="enabled">✓ On</span>
+                      <% } else { %>
+                        <span class="disabled">✗ Off</span>
+                      <% } %>
+                    </td>
+                  <% }) %>
+                <% } %>
                 <td><%= c.updatedAt.toLocaleString() %></td>
               </tr>
             <% }) %>

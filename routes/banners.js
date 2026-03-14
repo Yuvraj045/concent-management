@@ -26,7 +26,7 @@ router.post('/banners/new', auth, async (req, res) => {
   const { name, description, subscriptionTypes } = req.body;
   try {
     const types = subscriptionTypes
-      ? (Array.isArray(subscriptionTypes) ? subscriptionTypes : subscriptionTypes.split(',').map(s => s.trim()).filter(Boolean))
+      ? (Array.isArray(subscriptionTypes) ? subscriptionTypes : [subscriptionTypes]).map(s => s.trim()).filter(Boolean)
       : [];
 
     const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + uuidv4().slice(0, 8);
@@ -35,7 +35,7 @@ router.post('/banners/new', auth, async (req, res) => {
     res.redirect('/dashboard');
   } catch (err) {
     console.error(err);
-    res.render('banner-form', { error: 'Failed to create banner. Please try again.', user: req.user });
+    res.render('banner-form', { error: 'Failed to create preference center. Please try again.', user: req.user });
   }
 });
 
